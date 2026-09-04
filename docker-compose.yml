@@ -1,0 +1,68 @@
+name: reto2-alerta-temprana
+
+# 10 contenedores EXACTOS (restricción del reto, lectura estricta):
+# nginx(1) + rabbitmq(1) + api(2) + worker-emergency(2) + worker-position(4) = 10
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "15672:15672"   # UI de administración (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    deploy:
+      replicas: 2            # ← evidencia del límite de instancias
+    environment:
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker-emergency:
+    build:
+      context: .
+      dockerfile: workers/emergency/Dockerfile
+    deploy:
+      replicas: 2            # ← carril crítico dedicado
+    environment:
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      ALERT_TO: ${ALERT_TO}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker-position:
+    build:
+      context: .
+      dockerfile: workers/position/Dockerfile
+    deploy:
+      replicas: 4            # ← carril de volumen
+    environment:
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped

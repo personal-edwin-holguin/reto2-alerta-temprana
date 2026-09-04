@@ -1,0 +1,4 @@
+.env
+node_modules/
+logs_ejecucion.txt
+.DS_Store

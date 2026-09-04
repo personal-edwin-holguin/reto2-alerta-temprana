@@ -1,0 +1,11 @@
+{
+  "name": "reto2-worker-emergency",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": { "start": "node src/index.js" },
+  "dependencies": {
+    "amqplib": "0.10.4",
+    "nodemailer": "6.9.14"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "reto2-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": { "start": "node src/server.js" },
+  "dependencies": {
+    "amqplib": "0.10.4",
+    "fastify": "4.28.1"
+  }
+}
